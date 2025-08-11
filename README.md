@@ -7,6 +7,7 @@ No external dependencies.
 - Pack: Build a `.ts4script` from a workspace folder.
 - Watch: Auto-pack on file changes via polling (no external libs).
 - Ignore list editor: Manage `.ts4ignore` patterns per workspace.
+- Remembers last used paths and the active tab between sessions.
 
 ## Run
 Double-click `ts4script_tool_gui.py` (or run `python ts4script_tool_gui.py`).

@@ -8,6 +8,7 @@ import threading
 import zipfile
 import fnmatch
 import hashlib
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from datetime import datetime
@@ -31,6 +32,7 @@ DEFAULT_IGNORE = [
 
 APP_TITLE = "TS4ScriptTool GUI"
 APP_VERSION = "1.0.0"
+STATE_PATH = Path.home() / ".ts4script_tool_state.json"
 
 # ----------------------- Utility functions -----------------------
 
@@ -147,20 +149,22 @@ class App(tk.Tk):
 
         self._build_ui()
         self.watch_state = WatchState()
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
+        self._load_state()
 
     def _build_ui(self):
-        nb = ttk.Notebook(self)
-        nb.pack(fill="both", expand=True, padx=8, pady=8)
+        self.nb = ttk.Notebook(self)
+        self.nb.pack(fill="both", expand=True, padx=8, pady=8)
 
-        self.tab_extract = ttk.Frame(nb)
-        self.tab_pack = ttk.Frame(nb)
-        self.tab_watch = ttk.Frame(nb)
-        self.tab_ignore = ttk.Frame(nb)
+        self.tab_extract = ttk.Frame(self.nb)
+        self.tab_pack = ttk.Frame(self.nb)
+        self.tab_watch = ttk.Frame(self.nb)
+        self.tab_ignore = ttk.Frame(self.nb)
 
-        nb.add(self.tab_extract, text="Extract")
-        nb.add(self.tab_pack, text="Pack")
-        nb.add(self.tab_watch, text="Watch")
-        nb.add(self.tab_ignore, text="Ignore List")
+        self.nb.add(self.tab_extract, text="Extract")
+        self.nb.add(self.tab_pack, text="Pack")
+        self.nb.add(self.tab_watch, text="Watch")
+        self.nb.add(self.tab_ignore, text="Ignore List")
 
         self._build_extract_tab()
         self._build_pack_tab()
@@ -170,6 +174,50 @@ class App(tk.Tk):
         self.status = tk.StringVar(value="Ready.")
         status_bar = ttk.Label(self, textvariable=self.status, anchor="w")
         status_bar.pack(fill="x", padx=8, pady=(0,8))
+
+    def _save_state(self):
+        data = {
+            "extract_src": self.extract_src.get(),
+            "extract_dst": self.extract_dst.get(),
+            "pack_src": self.pack_src.get(),
+            "pack_dst": self.pack_dst.get(),
+            "watch_src": self.watch_src.get(),
+            "watch_dst": self.watch_dst.get(),
+            "watch_interval": self.watch_interval.get(),
+            "ignore_ws": self.ignore_ws.get(),
+            "selected_tab": self.nb.index(self.nb.select()),
+        }
+        try:
+            STATE_PATH.write_text(json.dumps(data), encoding="utf-8")
+        except Exception:
+            pass
+
+    def _load_state(self):
+        try:
+            data = json.loads(STATE_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            return
+        self.extract_src.set(data.get("extract_src", ""))
+        self.extract_dst.set(data.get("extract_dst", ""))
+        self.pack_src.set(data.get("pack_src", ""))
+        self.pack_dst.set(data.get("pack_dst", ""))
+        self.watch_src.set(data.get("watch_src", ""))
+        self.watch_dst.set(data.get("watch_dst", ""))
+        try:
+            self.watch_interval.set(float(data.get("watch_interval", 2.0)))
+        except Exception:
+            pass
+        self.ignore_ws.set(data.get("ignore_ws", ""))
+        idx = data.get("selected_tab")
+        if isinstance(idx, int):
+            try:
+                self.nb.select(idx)
+            except Exception:
+                pass
+
+    def _on_close(self):
+        self._save_state()
+        self.destroy()
 
     # ---------------- Extract tab ----------------
     def _build_extract_tab(self):
