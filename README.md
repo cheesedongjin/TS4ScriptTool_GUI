@@ -1,6 +1,6 @@
 # TS4ScriptTool GUI
 A simple Tkinter GUI to **extract**, **edit**, and **repack** Sims 4 `.ts4script` archives.
-No external dependencies. Works well with PyCharm on Windows/macOS/Linux.
+No external dependencies.
 
 ## Features
 - Extract: Unpack a `.ts4script` to a workspace folder.
